@@ -1,0 +1,5 @@
+name: MLGRush
+version: '1.0.0'
+main: net.asyncproxy.mlgrush.MLGRush
+api-version: '1.21'
+authors: [ AsyncProxy ]
