@@ -12,3 +12,5 @@ commands:
     permission: mlgrush.setup
   map:
     permission: mlgrush.setup
+  start:
+    permission: mlgrush.start

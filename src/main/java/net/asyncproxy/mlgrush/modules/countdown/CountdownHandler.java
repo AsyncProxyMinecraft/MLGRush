@@ -1,5 +1,6 @@
 package net.asyncproxy.mlgrush.modules.countdown;
 
+import lombok.Getter;
 import lombok.Setter;
 import net.asyncproxy.mlgrush.MLGRush;
 import net.asyncproxy.mlgrush.modules.game.GameHandler;
@@ -18,6 +19,8 @@ public class CountdownHandler {
 
     private final GameHandler gameHandler;
 
+    @Getter
+    @Setter
     private AtomicInteger countdown;
 
     private final String prefix;
@@ -105,7 +108,7 @@ public class CountdownHandler {
         if (this.countdownTask != null) {
             this.countdownTask.cancel();
             this.countdownTask = null;
-            this.countdown = new AtomicInteger(30);
+            this.countdown.set(30);
             this.voteHandler.clearAllVotes();
             this.setVotedMap(null);
         }

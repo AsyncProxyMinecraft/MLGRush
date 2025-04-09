@@ -2,10 +2,7 @@ package net.asyncproxy.mlgrush;
 
 import lombok.Getter;
 import lombok.Setter;
-import net.asyncproxy.mlgrush.commands.ForceMapCommand;
-import net.asyncproxy.mlgrush.commands.MapCommand;
-import net.asyncproxy.mlgrush.commands.SetSpawnCommand;
-import net.asyncproxy.mlgrush.commands.StatsCommand;
+import net.asyncproxy.mlgrush.commands.*;
 import net.asyncproxy.mlgrush.listener.game.BedBreakListener;
 import net.asyncproxy.mlgrush.listener.game.BlockBreakListener;
 import net.asyncproxy.mlgrush.listener.game.BlockPlaceListener;
@@ -132,6 +129,7 @@ public final class MLGRush extends JavaPlugin {
         this.getCommand("forcemap").setExecutor(new ForceMapCommand());
         this.getCommand("setspawn").setExecutor(new SetSpawnCommand());
         this.getCommand("map").setExecutor(new MapCommand());
+        this.getCommand("start").setExecutor(new StartCommand());
 
         this.mapHandler.getLoadedMaps().forEach((mapName, mapData) -> {
             String map = mapData.getRedSpawn().split(";")[0];
