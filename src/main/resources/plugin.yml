@@ -3,3 +3,12 @@ version: '1.0.0'
 main: net.asyncproxy.mlgrush.MLGRush
 api-version: '1.21'
 authors: [ AsyncProxy ]
+softdepend: [ Multiverse-Core ]
+commands:
+  stats:
+  forcemap:
+    permission: mlgrush.forcemap
+  setspawn:
+    permission: mlgrush.setup
+  map:
+    permission: mlgrush.setup

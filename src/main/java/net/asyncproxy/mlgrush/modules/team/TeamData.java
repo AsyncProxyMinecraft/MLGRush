@@ -11,6 +11,7 @@ import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -50,6 +51,10 @@ public class TeamData {
         this.maxPlayers = maxPlayers;
         this.scoreboardTeam = scoreboardTeam;
         this.scoreboard = scoreboard;
+        this.players = new ArrayList<>();
+        this.friendlyFire = false;
+        this.score = 0;
+        this.customData = new HashMap<>();
     }
 
 
@@ -124,7 +129,10 @@ public class TeamData {
     }
 
     public int getPlayerCount() {
-        return players.size();
+        if (this.players != null) {
+            return this.players.size();
+        }
+        return 0;
     }
 
     public boolean isFull() {
