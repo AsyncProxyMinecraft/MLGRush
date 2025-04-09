@@ -1,7 +1,14 @@
 package net.asyncproxy.mlgrush.modules.team;
 
+import net.asyncproxy.mlgrush.MLGRush;
+import net.asyncproxy.mlgrush.modules.map.LocationSerializer;
+import net.asyncproxy.mlgrush.modules.map.MapData;
+import net.asyncproxy.mlgrush.modules.map.MapHandler;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.ScoreboardManager;
@@ -14,6 +21,8 @@ public class TeamHandler {
     private final Map<String, TeamData> teams;
     private final Scoreboard scoreboard;
 
+    private final MapHandler mapHandler;
+
     /**
      * Creates a new TeamBuilder
      * @param scoreboardManager
@@ -21,6 +30,7 @@ public class TeamHandler {
     public TeamHandler(ScoreboardManager scoreboardManager) {
         this.teams = new HashMap<>();
         this.scoreboard = scoreboardManager.getNewScoreboard();
+        this.mapHandler = MLGRush.getInstance().getMapHandler();
     }
 
     /**
@@ -77,6 +87,27 @@ public class TeamHandler {
             }
         }
         return false;
+    }
+
+    public boolean isPlayerBed(Player player, Block block, String mapName) {
+        MapData map = this.mapHandler.getMap(mapName);
+        TeamData team = this.getPlayerTeam(player);
+
+        if (map != null) {
+            if (team.getName().equalsIgnoreCase("red")) {
+                Location bedTop = LocationSerializer.locFromString(map.getRedBedTop());
+                Location bedBottom = LocationSerializer.locFromString(map.getRedBedBottom());
+
+                return block.getLocation().equals(bedTop) || block.getLocation().equals(bedBottom);
+            } else {
+                Location bedTop = LocationSerializer.locFromString(map.getBlueBedTop());
+                Location bedBottom = LocationSerializer.locFromString(map.getBlueBedBottom());
+
+                return block.getLocation().equals(bedTop) || block.getLocation().equals(bedBottom);
+            }
+        }
+
+        return true;
     }
 
     /**
