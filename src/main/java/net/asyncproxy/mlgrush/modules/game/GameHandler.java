@@ -3,17 +3,21 @@ package net.asyncproxy.mlgrush.modules.game;
 import lombok.Getter;
 import lombok.Setter;
 import net.asyncproxy.mlgrush.MLGRush;
+import net.asyncproxy.mlgrush.modules.config.SpawnFileHandler;
 import net.asyncproxy.mlgrush.modules.countdown.CountdownHandler;
 import net.asyncproxy.mlgrush.modules.item.ItemBuilder;
 import net.asyncproxy.mlgrush.modules.map.LocationSerializer;
 import net.asyncproxy.mlgrush.modules.map.MapData;
 import net.asyncproxy.mlgrush.modules.map.MapHandler;
+import net.asyncproxy.mlgrush.modules.player.PlayerHandler;
 import net.asyncproxy.mlgrush.modules.team.TeamData;
 import net.asyncproxy.mlgrush.modules.team.TeamHandler;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.title.Title;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.block.Block;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
@@ -22,6 +26,8 @@ import org.bukkit.scheduler.BukkitTask;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class GameHandler {
 
@@ -42,6 +48,19 @@ public class GameHandler {
 
     private BukkitTask task;
 
+    private final SpawnFileHandler spawnFileHandler;
+
+    private final PlayerHandler playerHandler;
+
+    @Getter
+    private final ConcurrentHashMap<Player, Player> damagedMap;
+
+    private BukkitTask countdownTask;
+
+    private final String prefix;
+
+    private final String color;
+
     public GameHandler() {
         this.gameState = GameState.LOBBY;
         this.teamHandler = MLGRush.getInstance().getTeamHandler();
@@ -50,21 +69,17 @@ public class GameHandler {
         this.mapPlaying = null;
         this.placedBlocks = new ArrayList<>();
         this.task = null;
+        this.spawnFileHandler = MLGRush.getInstance().getSpawnFileHandler();
+        this.playerHandler = MLGRush.getInstance().getPlayerHandler();
+        this.damagedMap = new ConcurrentHashMap<>();
+        this.countdownTask = null;
+        this.prefix = MLGRush.getInstance().getPrefix();
+        this.color = MLGRush.getInstance().getColor();
     }
 
     public void startGame(String mapName) {
         this.gameState = GameState.RUNNING;
         this.setMapPlaying(mapName);
-
-        List<Player> distributePlayers = new ArrayList<>();
-
-        Bukkit.getOnlinePlayers().forEach(player -> {
-            if (this.teamHandler.getPlayerTeam(player) == null) {
-                distributePlayers.add(player);
-            }
-        });
-
-        this.teamHandler.distributePlayers(distributePlayers);
 
         this.teamHandler.getAllTeams().forEach(team -> {
             teleportPlayersToMap(team.getPlayers());
@@ -74,29 +89,70 @@ public class GameHandler {
         sendActionBar();
     }
 
-    public void endGame(Player winner) {
+    public void endGame(TeamData winningTeam) {
         this.gameState = GameState.FINISHED;
+        this.cancelActionBar();
+        Location spawnLocation = this.spawnFileHandler.getSpawn();
+        Bukkit.getOnlinePlayers().forEach(player -> {
+            player.getInventory().clear();
+            player.teleport(spawnLocation);
+        });
 
+        if (winningTeam.getName().equalsIgnoreCase("red")) {
+            TeamData blue = this.teamHandler.getTeam("blue");
+
+            Player redPlayer = winningTeam.getPlayers().getFirst();
+            Player bluePlayer = blue.getPlayers().getFirst();
+
+            this.playerHandler.getPlayer(redPlayer.getUniqueId()).addWins(1);
+            this.playerHandler.getPlayer(bluePlayer.getUniqueId()).addLosses(1);
+
+            Bukkit.getOnlinePlayers().forEach(players -> {
+                players.showTitle(Title.title(this.mm.deserialize("<dark_gray><b>»</b <gray>Team <red>Rot <dark_gray><b>«</b>"), this.mm.deserialize("<dark_gray><b>»</b> <gray>hat das Spiel gewonnen. <dark_gray><b>«</b>")));
+            });
+
+            this.playerHandler.savePlayer(redPlayer);
+            this.playerHandler.savePlayer(bluePlayer);
+        } else {
+            TeamData red = this.teamHandler.getTeam("red");
+
+            Player bluePlayer = winningTeam.getPlayers().getFirst();
+            Player redPlayer = red.getPlayers().getFirst();
+
+            this.playerHandler.getPlayer(redPlayer.getUniqueId()).addWins(1);
+            this.playerHandler.getPlayer(bluePlayer.getUniqueId()).addLosses(1);
+
+            Bukkit.getOnlinePlayers().forEach(players -> {
+                players.showTitle(Title.title(this.mm.deserialize("<dark_gray><b>»</b> <gray>Team <blue>Blau <dark_gray><b>«</b>"), this.mm.deserialize("<dark_gray><b>»</b> <gray>hat das Spiel gewonnen. <dark_gray><b>«</b>")));
+            });
+
+            this.playerHandler.savePlayer(redPlayer);
+            this.playerHandler.savePlayer(bluePlayer);
+        }
+
+        this.startEndCountdown();
     }
 
     public void destroyBed(Player player) {
         TeamData teamData = this.teamHandler.getPlayerTeam(player);
         if (teamData == null) return;
 
-        teamData.setScore(teamData.getScore() + 1);
+        teamData.addScore(1);
+        sendActionBar();
 
         resetAllBlocks();
+        this.getDamagedMap().clear();
         if (teamData.getScore() == 10) {
-            endGame(player);
+            endGame(teamData);
             return;
         }
 
         this.teamHandler.getAllTeams().forEach(team -> {
-           this.teleportPlayersToMap(team.getPlayers());
-           this.resetBlockAmount(team.getPlayers());
+            this.teleportPlayersToMap(team.getPlayers());
+            this.givePlayerItems(team.getPlayers());
         });
 
-        sendActionBar();
+        player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 0.3F, 1.0F);
     }
 
     public void teleportPlayersToMap(List<Player> players) {
@@ -139,11 +195,11 @@ public class GameHandler {
 
 
         players.forEach(player -> {
-           player.getInventory().clear();
+            player.getInventory().clear();
 
-           player.getInventory().setItem(0, stick);
-           player.getInventory().setItem(1, blocks);
-           player.getInventory().setItem(2, pickaxe);
+            player.getInventory().setItem(0, stick);
+            player.getInventory().setItem(1, blocks);
+            player.getInventory().setItem(2, pickaxe);
         });
     }
 
@@ -179,11 +235,44 @@ public class GameHandler {
 
         this.task = Bukkit.getScheduler().runTaskTimer(MLGRush.getInstance(), () -> {
             Bukkit.getOnlinePlayers().forEach(player -> {
-               player.sendActionBar(this.mm.deserialize("<red>" + redPlayerName + "</red> " +
-                               "<gray>" + redTeam.getScore() + "</gray> <dark_gray>| " +
-                               "<blue>" + bluePlayerName + "</blue> <gray>" + blueTeam.getScore() + "</gray>")
-               );
+                player.sendActionBar(this.mm.deserialize("<red>" + redPlayerName + "</red> " +
+                        "<gray>" + redTeam.getScore() + "</gray> <dark_gray>| " +
+                        "<blue>" + bluePlayerName + "</blue> <gray>" + blueTeam.getScore() + "</gray>")
+                );
             });
+        }, 10L, 10L);
+    }
+
+    public void startEndCountdown() {
+        if (this.countdownTask != null) {
+            this.countdownTask.cancel();
+            this.countdownTask = null;
+        }
+
+        AtomicInteger atomicInteger = new AtomicInteger(10);
+        this.countdownTask = Bukkit.getScheduler().runTaskTimer(MLGRush.getInstance(), () -> {
+            int countdown = atomicInteger.getAndDecrement();
+
+            if (countdown == 0) {
+                Bukkit.getServer().shutdown();
+                this.countdownTask.cancel();
+                this.countdownTask = null;
+                return;
+            }
+
+            if (countdown == 2 || countdown == 3 || countdown == 4 || countdown == 5 || countdown == 10) {
+                Bukkit.broadcast(this.mm.deserialize(this.prefix + "Das Spiel endet in " + this.color + countdown + " <gray>Sekunden."));
+                Bukkit.getOnlinePlayers().forEach(player -> {
+                    player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3F, 1.0F);
+                });
+            }
+
+            if (countdown == 1) {
+                Bukkit.broadcast(this.mm.deserialize(this.prefix + "Das Spiel endet in " + this.color + "einer <gray>Sekunden."));
+                Bukkit.getOnlinePlayers().forEach(player -> {
+                    player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3F, 1.0F);
+                });
+            }
         }, 20L, 20L);
     }
 

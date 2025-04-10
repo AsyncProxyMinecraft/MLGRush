@@ -3,10 +3,7 @@ package net.asyncproxy.mlgrush;
 import lombok.Getter;
 import lombok.Setter;
 import net.asyncproxy.mlgrush.commands.*;
-import net.asyncproxy.mlgrush.listener.game.BedBreakListener;
-import net.asyncproxy.mlgrush.listener.game.BlockBreakListener;
-import net.asyncproxy.mlgrush.listener.game.BlockPlaceListener;
-import net.asyncproxy.mlgrush.listener.game.PlayerMoveListener;
+import net.asyncproxy.mlgrush.listener.game.*;
 import net.asyncproxy.mlgrush.listener.lobby.*;
 import net.asyncproxy.mlgrush.modules.config.ConfigFileHandler;
 import net.asyncproxy.mlgrush.modules.config.DatabaseFileHandler;
@@ -124,6 +121,9 @@ public final class MLGRush extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new BlockBreakListener(), this);
         Bukkit.getPluginManager().registerEvents(new BedBreakListener(), this);
         Bukkit.getPluginManager().registerEvents(new PlayerMoveListener(), this);
+        Bukkit.getPluginManager().registerEvents(new EntityDamageListener(), this);
+        Bukkit.getPluginManager().registerEvents(new EntityDamageByEntityListener(), this);
+        Bukkit.getPluginManager().registerEvents(new PlayerDropListener(), this);
 
         this.getCommand("stats").setExecutor(new StatsCommand());
         this.getCommand("forcemap").setExecutor(new ForceMapCommand());

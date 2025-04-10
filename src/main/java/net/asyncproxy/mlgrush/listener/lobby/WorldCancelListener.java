@@ -17,11 +17,13 @@ import org.bukkit.event.vehicle.VehicleEnterEvent;
 public class WorldCancelListener implements Listener {
 
     private boolean isInLobby(Player player) {
-        return MLGRush.getInstance().getGameHandler().getGameState() == GameState.LOBBY;
+        GameState currentState = MLGRush.getInstance().getGameHandler().getGameState();
+        return currentState == GameState.LOBBY || currentState == GameState.FINISHED;
     }
 
     private boolean isInLobby() {
-        return MLGRush.getInstance().getGameHandler().getGameState() == GameState.LOBBY;
+        GameState currentState = MLGRush.getInstance().getGameHandler().getGameState();
+        return currentState == GameState.LOBBY || currentState == GameState.FINISHED;
     }
 
     @EventHandler
