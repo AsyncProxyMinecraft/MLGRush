@@ -63,6 +63,7 @@ public class PlayerMoveListener implements Listener {
 
                 this.playerHandler.getPlayer(player.getUniqueId()).addDeaths(1);
                 this.gameHandler.teleportPlayer(player);
+                this.gameHandler.givePlayerItems(player);
                 player.sendMessage(this.mm.deserialize(this.prefix + "Du bist gestorben."));
             }
         }

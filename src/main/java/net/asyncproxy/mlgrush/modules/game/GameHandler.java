@@ -203,6 +203,26 @@ public class GameHandler {
         });
     }
 
+    public void givePlayerItems(Player player) {
+        final ItemStack stick = new ItemBuilder(Material.STICK)
+                .setName("<dark_gray>» <red>Knüppel")
+                .setUnbreakable(true)
+                .addEnchantment(Enchantment.KNOCKBACK, 2).build();
+
+        final ItemStack blocks = new ItemBuilder(Material.SANDSTONE).setAmount(64).build();
+
+        final ItemStack pickaxe = new ItemBuilder(Material.WOODEN_PICKAXE)
+                .setName("<dark_gray>» <red>Spitzhacke")
+                .setUnbreakable(true)
+                .addEnchantment(Enchantment.EFFICIENCY, 1).build();
+
+        player.getInventory().clear();
+
+        player.getInventory().setItem(0, stick);
+        player.getInventory().setItem(1, blocks);
+        player.getInventory().setItem(2, pickaxe);
+    }
+
     private void resetBlockAmount(Player player) {
         final ItemStack blocks = new ItemBuilder(Material.SANDSTONE).setAmount(64).build();
         player.getInventory().setItem(1, blocks);
@@ -268,7 +288,7 @@ public class GameHandler {
             }
 
             if (countdown == 1) {
-                Bukkit.broadcast(this.mm.deserialize(this.prefix + "Das Spiel endet in " + this.color + "einer <gray>Sekunden."));
+                Bukkit.broadcast(this.mm.deserialize(this.prefix + "Das Spiel endet in " + this.color + "einer <gray>Sekunde."));
                 Bukkit.getOnlinePlayers().forEach(player -> {
                     player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3F, 1.0F);
                 });
