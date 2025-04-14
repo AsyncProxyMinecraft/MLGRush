@@ -5,6 +5,8 @@ import net.asyncproxy.mlgrush.modules.countdown.CountdownHandler;
 import net.asyncproxy.mlgrush.modules.game.GameHandler;
 import net.asyncproxy.mlgrush.modules.game.GameState;
 import net.asyncproxy.mlgrush.modules.item.ItemBuilder;
+import net.asyncproxy.mlgrush.modules.team.TeamData;
+import net.asyncproxy.mlgrush.modules.team.TeamHandler;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -26,12 +28,15 @@ public class PlayerQuitListener implements Listener {
 
     private final MiniMessage mm;
 
+    private final TeamHandler teamHandler;
+
     public PlayerQuitListener() {
         this.gameHandler = MLGRush.getInstance().getGameHandler();
         this.countdownHandler = MLGRush.getInstance().getCountdownHandler();
         this.prefix = MLGRush.getInstance().getPrefix();
         this.color = MLGRush.getInstance().getColor();
         this.mm = MiniMessage.miniMessage();
+        this.teamHandler = MLGRush.getInstance().getTeamHandler();
     }
 
 
@@ -43,6 +48,9 @@ public class PlayerQuitListener implements Listener {
         if (this.gameHandler.getGameState() == GameState.LOBBY) {
             Bukkit.broadcast(this.mm.deserialize(this.prefix + "Der Spieler " + this.color + player.getName() + "</gradient> <gray>hat das Spiel verlassen."));
             if (this.countdownHandler.isCountdownRunning()) {
+                if (this.teamHandler.getPlayerTeam(player) != null) {
+                    this.teamHandler.getPlayerTeam(player).removePlayer(player);
+                }
                 this.countdownHandler.cancelCountdown();
                 Bukkit.getOnlinePlayers().forEach(players -> {
                     players.sendMessage(this.mm.deserialize(this.prefix + "<red>Der Countdown wurde abgebrochen da ein Spieler das Spiel verlassen hat."));
@@ -52,10 +60,14 @@ public class PlayerQuitListener implements Listener {
                 });
             }
         } else if (this.gameHandler.getGameState() == GameState.RUNNING) {
-            this.gameHandler.endGame();
-
-        } else {
-
+            TeamData leavedTeam = this.teamHandler.getPlayerTeam(player);
+            if (leavedTeam != null) {
+                if (leavedTeam.getName().equalsIgnoreCase("red")) {
+                    this.gameHandler.endGame(this.teamHandler.getTeam("blue"));
+                } else {
+                    this.gameHandler.endGame(this.teamHandler.getTeam("red"));
+                }
+            }
         }
     }
 

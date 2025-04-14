@@ -4,11 +4,8 @@ import lombok.Getter;
 import net.asyncproxy.mlgrush.MLGRush;
 import net.asyncproxy.mlgrush.modules.database.IMySQLHandler;
 import org.bukkit.entity.Player;
-import org.bukkit.event.entity.EntityCreatePortalEvent;
 
-import java.sql.ClientInfoStatus;
 import java.sql.SQLException;
-import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;

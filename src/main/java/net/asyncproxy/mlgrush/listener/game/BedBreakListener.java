@@ -8,13 +8,13 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 
 public class BedBreakListener implements Listener {
 
     private final GameHandler gameHandler;
-
-    private final GameState gameState;
 
     private final TeamHandler teamHandler;
 
@@ -24,25 +24,40 @@ public class BedBreakListener implements Listener {
 
     public BedBreakListener() {
         this.gameHandler = MLGRush.getInstance().getGameHandler();
-        this.gameState = this.gameHandler.getGameState();
         this.teamHandler = MLGRush.getInstance().getTeamHandler();
         this.prefix = MLGRush.getInstance().getPrefix();
         this.mm = MiniMessage.miniMessage();
     }
 
     private boolean isInGame() {
-        return this.gameState == GameState.RUNNING;
+        return this.gameHandler.getGameState() == GameState.RUNNING;
     }
 
     @EventHandler
     public void onBedBreak(BlockBreakEvent event) {
         Player player = event.getPlayer();
-        if (event.getBlock().getType().name().endsWith("_BED")) event.setCancelled(true);
+        if(isInGame()) {
+            if (!event.getBlock().getType().name().endsWith("_BED")) return;
 
-        if (this.teamHandler.isPlayerBed(player, event.getBlock(), this.gameHandler.mapPlaying)) {
-            player.sendMessage(this.mm.deserialize(this.prefix + "<red>Du kannst dein eigenes Bed nicht zerstören!"));
-        } else {
-            this.gameHandler.destroyBed(player);
+            if (event.getBlock().getType().name().endsWith("_BED")) event.setCancelled(true);
+
+            if (this.teamHandler.isPlayerBed(player, event.getBlock(), this.gameHandler.mapPlaying)) {
+                player.sendMessage(this.mm.deserialize(this.prefix + "<red>Du kannst dein eigenes Bed nicht zerstören!"));
+            } else {
+                this.gameHandler.destroyBed(player);
+            }
+        }
+    }
+
+    @EventHandler
+    public void onBedInteract(PlayerInteractEvent event) {
+        Player player = event.getPlayer();
+        if (isInGame()) {
+            if (event.getClickedBlock() == null) return;
+
+            if (event.getAction() == Action.RIGHT_CLICK_BLOCK) {
+                if (event.getClickedBlock().getType().name().endsWith("_BED")) event.setCancelled(true);
+            }
         }
     }
 }

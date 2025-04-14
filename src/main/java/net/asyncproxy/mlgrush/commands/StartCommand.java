@@ -3,6 +3,7 @@ package net.asyncproxy.mlgrush.commands;
 import net.asyncproxy.mlgrush.MLGRush;
 import net.asyncproxy.mlgrush.modules.countdown.CountdownHandler;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import org.bukkit.Sound;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -50,6 +51,7 @@ public class StartCommand implements CommandExecutor {
 
         this.countdownHandler.getCountdown().set(15);
         player.sendMessage(this.mm.deserialize(this.prefix + "Du hast das Spiel verkürzt!"));
+        player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 0.3F, 1.0F);
         return false;
     }
 }

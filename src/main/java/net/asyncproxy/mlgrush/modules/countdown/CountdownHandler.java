@@ -4,13 +4,17 @@ import lombok.Getter;
 import lombok.Setter;
 import net.asyncproxy.mlgrush.MLGRush;
 import net.asyncproxy.mlgrush.modules.game.GameHandler;
+import net.asyncproxy.mlgrush.modules.team.TeamHandler;
 import net.asyncproxy.mlgrush.modules.vote.VoteHandler;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.title.Title;
 import org.bukkit.Bukkit;
 import org.bukkit.Sound;
+import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class CountdownHandler {
@@ -34,6 +38,8 @@ public class CountdownHandler {
     @Setter
     private String votedMap;
 
+    private TeamHandler teamHandler;
+
     public CountdownHandler() {
         this.countdownTask = null;
         this.gameHandler = MLGRush.getInstance().getGameHandler();
@@ -43,6 +49,7 @@ public class CountdownHandler {
         this.mm = MiniMessage.miniMessage();
         this.voteHandler = MLGRush.getInstance().getVoteHandler();
         this.votedMap = null;
+        this.teamHandler = MLGRush.getInstance().getTeamHandler();
     }
 
     public boolean isCountdownRunning() {
@@ -95,6 +102,15 @@ public class CountdownHandler {
             if (countdown == 15) {
                 Bukkit.broadcast(this.mm.deserialize(this.prefix + "Die Voting-Phase wurde beendet!"));
                 this.setVotedMap(this.voteHandler.getVotedMap());
+                List<Player> distributePlayers = new ArrayList<>();
+
+                Bukkit.getOnlinePlayers().forEach(player -> {
+                    if (this.teamHandler.getPlayerTeam(player) == null) {
+                        distributePlayers.add(player);
+                    }
+                });
+
+                this.teamHandler.distributePlayers(distributePlayers);
                 Bukkit.getOnlinePlayers().forEach(player -> {
                     player.getInventory().clear();
                     player.playSound(player.getLocation(), Sound.BLOCK_ANVIL_PLACE, 0.3F, 1.0F);
